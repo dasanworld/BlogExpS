@@ -121,14 +121,44 @@ export const saveDraft = async (
 
   // Upsert channels
   if (norm.normalized.length) {
-    const upsertRows = norm.normalized.map((c) => ({
-      id: c.id,
-      influencer_id: userId,
-      platform: c.platform,
-      channel_name: c.name,
-      channel_url: c.url,
-      verification_status: 'pending',
-    }));
+    // Load existing channels to preserve verification_status when platform/url unchanged
+    const existingRes = await supabase
+      .from('influencer_channels')
+      .select('id, platform, channel_url, verification_status')
+      .eq('influencer_id', userId);
+    const existingById = new Map<string, { platform: string; url: string; status: string }>();
+    for (const row of existingRes.data ?? []) {
+      existingById.set(String(row.id), {
+        platform: String(row.platform),
+        url: String(row.channel_url),
+        status: String(row.verification_status),
+      });
+    }
+
+    const upsertRows = norm.normalized.map((c) => {
+      const base: Record<string, unknown> = {
+        influencer_id: userId,
+        platform: c.platform,
+        channel_name: c.name,
+        channel_url: c.url,
+      };
+      if (c.id) {
+        base.id = c.id;
+        const exist = existingById.get(c.id);
+        const unchanged = exist && exist.platform === String(c.platform) && exist.url === c.url;
+        if (unchanged) {
+          // preserve current status
+          base.verification_status = exist!.status;
+        } else {
+          base.verification_status = 'pending';
+        }
+      } else {
+        // new channel
+        base.verification_status = 'pending';
+      }
+      return base;
+    });
+
     const upRes = await supabase
       .from('influencer_channels')
       .upsert(upsertRows, { onConflict: 'id' })
@@ -170,5 +200,15 @@ export const submitProfile = async (
     return failure(500, influencerErrorCodes.dbTxFailed, upd.error.message);
   }
 
-  return getMe(supabase, userId);
+  // Count verified channels for message purposes
+  const countRes = await supabase
+    .from('influencer_channels')
+    .select('id', { count: 'exact', head: true })
+    .eq('influencer_id', userId)
+    .eq('verification_status', 'verified');
+  const verifiedCount = typeof countRes.count === 'number' ? countRes.count : undefined;
+
+  const snapshot = await getMe(supabase, userId);
+  if (!snapshot.ok) return snapshot;
+  return success({ ...snapshot.data, ...(verifiedCount !== undefined ? { verifiedCount } : {}) });
 };

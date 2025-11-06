@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { INFLUENCER_API_ROUTES } from "@/features/influencer/routes";
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
+import { INFLUENCER_MESSAGES } from "@/features/influencer/messages";
 
 type Channel = {
   id?: string;
@@ -14,6 +16,7 @@ type Channel = {
 type ProfileResponse = {
   profileCompleted: boolean;
   channels: Array<Required<Channel>>;
+  verifiedCount?: number;
 };
 
 export default function InfluencerProfilePage() {
@@ -31,11 +34,16 @@ export default function InfluencerProfilePage() {
     (async () => {
       setLoading(true);
       try {
-        const res = await fetch(INFLUENCER_API_ROUTES.me, { cache: "no-store" });
+        const supabase = getSupabaseBrowserClient();
+        const { data } = await supabase.auth.getSession();
+        const access = data.session?.access_token;
+        const headers: Record<string, string> = { };
+        if (access) headers["Authorization"] = `Bearer ${access}`;
+        const res = await fetch(INFLUENCER_API_ROUTES.me, { cache: "no-store", headers });
         if (res.ok) {
-          const json: { data: ProfileResponse } = await res.json();
+          const json: ProfileResponse = await res.json();
           if (mounted) {
-            setChannels(json.data.channels.map((c) => ({ ...c, _op: "upsert" })));
+            setChannels(json.channels.map((c) => ({ ...c, _op: "upsert" })));
           }
         }
       } finally {
@@ -63,17 +71,22 @@ export default function InfluencerProfilePage() {
     setSaving(true);
     setMessage(null);
     try {
+      const supabase = getSupabaseBrowserClient();
+      const { data } = await supabase.auth.getSession();
+      const access = data.session?.access_token;
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (access) headers["Authorization"] = `Bearer ${access}`;
       const res = await fetch(INFLUENCER_API_ROUTES.save, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ birthDate, channels }),
       });
-      const json = await res.json();
+      const json: ProfileResponse | { error?: { message?: string } } = await res.json();
       if (res.ok) {
-        setMessage("저장되었습니다.");
-        setChannels(json.data.channels.map((c: any) => ({ ...c, _op: "upsert" })));
+        setMessage(INFLUENCER_MESSAGES.save.success);
+        setChannels((json as ProfileResponse).channels.map((c: any) => ({ ...c, _op: "upsert" })));
       } else {
-        setMessage(json?.error?.message ?? "오류가 발생했습니다.");
+        setMessage((json as any)?.error?.message ?? "오류가 발생했습니다.");
       }
     } finally {
       setSaving(false);
@@ -84,17 +97,27 @@ export default function InfluencerProfilePage() {
     setSubmitting(true);
     setMessage(null);
     try {
+      const supabase = getSupabaseBrowserClient();
+      const { data } = await supabase.auth.getSession();
+      const access = data.session?.access_token;
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (access) headers["Authorization"] = `Bearer ${access}`;
       const res = await fetch(INFLUENCER_API_ROUTES.submit, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({}),
       });
-      const json = await res.json();
+      const json: ProfileResponse | { error?: { message?: string } } = await res.json();
       if (res.ok) {
-        setMessage("프로필 완료");
-        setChannels(json.data.channels.map((c: any) => ({ ...c, _op: "upsert" })));
+        const data = json as ProfileResponse;
+        if (typeof data.verifiedCount === "number" && data.verifiedCount > 0) {
+          setMessage(`검증된 채널 ${data.verifiedCount}개 확인되어 프로필이 완료되었습니다.`);
+        } else {
+          setMessage(INFLUENCER_MESSAGES.submit.success);
+        }
+        setChannels(data.channels.map((c: any) => ({ ...c, _op: "upsert" })));
       } else {
-        setMessage(json?.error?.message ?? "오류가 발생했습니다.");
+        setMessage((json as any)?.error?.message ?? "오류가 발생했습니다.");
       }
     } finally {
       setSubmitting(false);
@@ -107,13 +130,22 @@ export default function InfluencerProfilePage() {
       {loading ? <p>로딩 중…</p> : null}
       <div className="space-y-4">
         <label className="block">
-          <span className="block text-sm">생년월일(YYYY-MM-DD)</span>
+          <span className="block text-sm">
+            생년월일
+            <span className="ml-1 text-red-500" aria-hidden>
+              *
+            </span>
+          </span>
           <input
-            className="border rounded px-2 py-1 w-full"
+            type="date"
+            className="border rounded px-2 py-1 w-full text-sm"
             value={birthDate}
             onChange={(e) => setBirthDate(e.target.value)}
-            placeholder="1990-01-01"
+            placeholder="예: 1990-01-01"
+            aria-required
+            required
           />
+          <span className="mt-1 block text-xs text-gray-500">예: 1990-01-01 (클릭하여 달력에서 선택)</span>
         </label>
 
         <div>
@@ -130,24 +162,48 @@ export default function InfluencerProfilePage() {
                   <div className="text-gray-500 text-sm">삭제 예정</div>
                 ) : (
                   <div className="grid grid-cols-3 gap-2">
-                    <input
-                      className="border rounded px-2 py-1"
-                      placeholder="platform"
-                      value={c.platform}
-                      onChange={(e) => onChangeChannel(idx, { platform: e.target.value })}
-                    />
-                    <input
-                      className="border rounded px-2 py-1"
-                      placeholder="name"
-                      value={c.name}
-                      onChange={(e) => onChangeChannel(idx, { name: e.target.value })}
-                    />
-                    <input
-                      className="border rounded px-2 py-1"
-                      placeholder="url"
-                      value={c.url}
-                      onChange={(e) => onChangeChannel(idx, { url: e.target.value })}
-                    />
+                    <div className="flex flex-col">
+                      <label className="text-xs text-gray-600">
+                        플랫폼
+                        <span className="ml-0.5 text-red-500" aria-hidden>*</span>
+                      </label>
+                      <input
+                        className="border rounded px-2 py-1 text-sm"
+                        placeholder="예: instagram / youtube"
+                        value={c.platform}
+                        onChange={(e) => onChangeChannel(idx, { platform: e.target.value })}
+                        aria-required
+                        required
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className="text-xs text-gray-600">
+                        채널명
+                        <span className="ml-0.5 text-red-500" aria-hidden>*</span>
+                      </label>
+                      <input
+                        className="border rounded px-2 py-1 text-sm"
+                        placeholder="예: my_handle"
+                        value={c.name}
+                        onChange={(e) => onChangeChannel(idx, { name: e.target.value })}
+                        aria-required
+                        required
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className="text-xs text-gray-600">
+                        채널 URL
+                        <span className="ml-0.5 text-red-500" aria-hidden>*</span>
+                      </label>
+                      <input
+                        className="border rounded px-2 py-1 text-sm"
+                        placeholder="예: https://instagram.com/my_handle"
+                        value={c.url}
+                        onChange={(e) => onChangeChannel(idx, { url: e.target.value })}
+                        aria-required
+                        required
+                      />
+                    </div>
                   </div>
                 )}
                 <div className="mt-2 flex gap-2">
@@ -174,4 +230,3 @@ export default function InfluencerProfilePage() {
     </div>
   );
 }
-

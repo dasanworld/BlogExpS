@@ -17,13 +17,10 @@ export const canonicalizeUrl = (raw: string): string => {
   }
 };
 
-export const isValidPlatformUrl = (platform: string, rawUrl: string): boolean => {
+export const isValidPlatformUrl = (_platform: string, rawUrl: string): boolean => {
   try {
     const url = new URL(rawUrl);
-    const host = url.hostname.toLowerCase();
-    // Basic heuristic: host should contain platform keyword
-    // e.g., youtube -> youtube.com/youtu.be, instagram -> instagram.com, etc.
-    return host.includes(platform.toLowerCase());
+    return Boolean(url.protocol && url.hostname);
   } catch {
     return false;
   }
@@ -32,4 +29,3 @@ export const isValidPlatformUrl = (platform: string, rawUrl: string): boolean =>
 export const makeChannelDedupKey = (platform: string, canonicalUrl: string): string => {
   return `${platform.toLowerCase()}::${canonicalizeUrl(canonicalUrl)}`;
 };
-

@@ -7,13 +7,20 @@ export const PlatformEnum = policy.allowedPlatforms && policy.allowedPlatforms.l
   ? z.enum(policy.allowedPlatforms as [string, ...string[]])
   : z.string().min(1);
 
-export const ChannelInputSchema = z.object({
+const ChannelDeleteSchema = z.object({
+  id: z.string().uuid(),
+  _op: z.literal('delete'),
+});
+
+const ChannelUpsertSchema = z.object({
   id: z.string().uuid().optional(),
   platform: PlatformEnum,
   name: z.string().min(1),
   url: z.string().url(),
-  _op: z.enum(['upsert', 'delete']).optional().default('upsert'),
+  _op: z.literal('upsert').optional(),
 });
+
+export const ChannelInputSchema = z.union([ChannelDeleteSchema, ChannelUpsertSchema]);
 
 export const ProfileUpsertRequestSchema = z.object({
   birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -40,6 +47,6 @@ export const ChannelSchema = z.object({
 export const ProfileResponseSchema = z.object({
   profileCompleted: z.boolean(),
   channels: z.array(ChannelSchema),
+  verifiedCount: z.number().int().nonnegative().optional(),
 });
 export type ProfileResponse = z.infer<typeof ProfileResponseSchema>;
-
