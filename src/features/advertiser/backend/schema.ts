@@ -16,8 +16,12 @@ export const SubmitRequestSchema = z.object({
 export type SubmitRequest = z.infer<typeof SubmitRequestSchema>;
 
 export const ProfileResponseSchema = z.object({
+  id: z.string().uuid().optional(),
   profileCompleted: z.boolean(),
   verificationStatus: z.enum(['pending', 'verified', 'failed']),
+  companyName: z.string().optional(),
+  category: z.string().optional(),
+  businessRegistrationNumber: z.string().optional(),
+  location: z.string().optional(),
 });
 export type ProfileResponse = z.infer<typeof ProfileResponseSchema>;
-

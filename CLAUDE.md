@@ -15,3 +15,6 @@ Ruler concatenates all .md files in this directory (and subdirectories), startin
 
 - Remind: 401은 FE가 Authorization Bearer 토큰을 누락했고, 400/NOT NULL은 새 채널 upsert에 id=null 전송·응답 래핑 오해에서 발생.
 - Rule: 보호 API는 항상 액세스 토큰 포함, 신규 레코드는 id 필드 미포함, FE는 respond()의 비래핑 JSON 스키마로 파싱.
+
+- Remind: 임시저장 401은 Authorization 미첨부, 403은 user_profiles.role≠'advertiser' 인가 실패.
+- Rule: FE는 Supabase 세션 토큰을 Bearer로 항상 주입하고, 호출 전 필요한 역할을 확인·유도.

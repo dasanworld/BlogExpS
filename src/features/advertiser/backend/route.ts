@@ -9,6 +9,8 @@ import {
   type ProfileUpsertRequest,
 } from './schema';
 import { getMe, saveDraft, submitProfile } from './service';
+import { registerAdvertiserCampaignRoutes } from './campaign.route';
+import { registerAdvertiserCampaignManageRoutes } from './campaign.manage.route';
 import { advertiserErrorCodes } from './error';
 
 const parseJsonSafe = async <T>(req: Request, schema: z.ZodSchema<T>) => {
@@ -83,5 +85,9 @@ export const registerAdvertiserRoutes = (app: Hono<AppEnv>) => {
 
   app.post('/advertisers/submit', withAuth({ requiredRole: 'advertiser' }), submitHandler);
   app.post('/api/advertisers/submit', withAuth({ requiredRole: 'advertiser' }), submitHandler);
-};
 
+  // Advertiser campaigns (list/create)
+  registerAdvertiserCampaignRoutes(app);
+  // Advertiser campaign management (detail/close/select)
+  registerAdvertiserCampaignManageRoutes(app);
+};

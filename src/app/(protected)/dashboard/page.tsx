@@ -1,48 +1,58 @@
 "use client";
 
-import Image from "next/image";
-import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { apiClient } from "@/lib/remote/api-client";
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
 
-type DashboardPageProps = {
-  params: Promise<Record<string, never>>;
-};
+export default function DashboardRoleRouterPage() {
+  const router = useRouter();
+  const [state, setState] = useState<'checking' | 'no-access' | 'redirecting'>('checking');
 
-export default function DashboardPage({ params }: DashboardPageProps) {
-  void params;
-  const { user } = useCurrentUser();
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const supabase = getSupabaseBrowserClient();
+        const session = await supabase.auth.getSession();
+        const access = session.data.session?.access_token;
+        const headers: Record<string, string> = {};
+        if (access) headers['Authorization'] = `Bearer ${access}`;
+        // Prefer advertiser first
+        const adv = await apiClient.get('/api/advertisers/me', { headers, withCredentials: true }).then(() => true).catch(() => false);
+        if (adv) {
+          setState('redirecting');
+          router.replace('/advertisers/dashboard');
+          return;
+        }
+        const inf = await apiClient.get('/api/influencers/me', { headers, withCredentials: true }).then(() => true).catch(() => false);
+        if (inf) {
+          setState('redirecting');
+          router.replace('/influencer/dashboard');
+          return;
+        }
+        setState('no-access');
+      } catch {
+        setState('no-access');
+      }
+    };
+    void run();
+  }, [router]);
+
+  if (state === 'redirecting') return null;
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-12">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold">대시보드</h1>
-        <p className="text-slate-500">
-          {user?.email ?? "알 수 없는 사용자"} 님, 환영합니다.
-        </p>
-      </header>
-      <div className="overflow-hidden rounded-xl border border-slate-200">
-        <Image
-          alt="대시보드"
-          src="https://picsum.photos/seed/dashboard/960/420"
-          width={960}
-          height={420}
-          className="h-auto w-full object-cover"
-        />
-      </div>
-      <section className="grid gap-4 md:grid-cols-2">
-        <article className="rounded-lg border border-slate-200 p-4">
-          <h2 className="text-lg font-medium">현재 세션</h2>
-          <p className="mt-2 text-sm text-slate-500">
-            Supabase 미들웨어가 세션 쿠키를 자동으로 동기화합니다.
-          </p>
-        </article>
-        <article className="rounded-lg border border-slate-200 p-4">
-          <h2 className="text-lg font-medium">보안 체크</h2>
-          <p className="mt-2 text-sm text-slate-500">
-            보호된 App Router 세그먼트로 라우팅되며, 로그인 사용
-            자만 접근할 수 있습니다.
-          </p>
-        </article>
-      </section>
+    <div className="mx-auto max-w-3xl px-6 py-12">
+      <h1 className="mb-2 text-2xl font-semibold">대시보드</h1>
+      {state === 'checking' && <p className="text-slate-500">역할을 확인하는 중...</p>}
+      {state === 'no-access' && (
+        <div className="rounded border border-amber-200 bg-amber-50 p-4 text-amber-900">
+          접근 가능한 대시보드가 없습니다. 프로필을 완료해 주세요.
+          <div className="mt-2 flex gap-2">
+            <a href="/advertisers/profile" className="underline">광고주 프로필</a>
+            <a href="/influencer/profile" className="underline">인플루언서 프로필</a>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -20,7 +20,7 @@ export const getMe = async (
 ): Promise<HandlerResult<ProfileResponse, typeof advertiserErrorCodes[keyof typeof advertiserErrorCodes], unknown>> => {
   const prof = await supabase
     .from('advertiser_profiles')
-    .select('profile_completed, verification_status')
+    .select('profile_completed, verification_status, company_name, category, business_registration_number, location')
     .eq('id', userId)
     .single();
 
@@ -34,7 +34,15 @@ export const getMe = async (
     | 'verified'
     | 'failed';
 
-  return success({ profileCompleted, verificationStatus: verification });
+  return success({
+    id: userId,
+    profileCompleted,
+    verificationStatus: verification,
+    companyName: prof.data?.company_name ?? undefined,
+    category: prof.data?.category ?? undefined,
+    businessRegistrationNumber: prof.data?.business_registration_number ?? undefined,
+    location: prof.data?.location ?? undefined,
+  });
 };
 
 export const saveDraft = async (
@@ -112,4 +120,3 @@ export const submitProfile = async (
 
   return getMe(supabase, userId);
 };
-
