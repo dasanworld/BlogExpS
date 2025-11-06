@@ -6,3 +6,5 @@ Ruler concatenates all .md files in this directory (and subdirectories), startin
 
 - Remind: 404는 미등록 API 라우트, 500/RLS 에러는 user_profiles 등 테이블의 RLS/마이그레이션 누락이 원인.
 - Rule: 엔드포인트 활성화 전 Hono/Next 라우트 등록과 관련 테이블의 마이그레이션·RLS 적용을 반드시 사전 점검.
+
+- Dev note: Local development uses migration `0004_disable_rls.sql` to disable RLS. Re‑enable RLS and restore policies before staging/production.

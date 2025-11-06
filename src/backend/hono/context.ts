@@ -8,12 +8,18 @@ export type AppConfig = {
     url: string;
     serviceRoleKey: string;
   };
+  influencerPolicy?: {
+    minAgeYears?: number;
+    maxChannels?: number;
+    allowedPlatforms?: string[];
+  };
 };
 
 export type AppVariables = {
   supabase: SupabaseClient;
   logger: AppLogger;
   config: AppConfig;
+  user?: { id: string; email?: string; role?: 'influencer' | 'advertiser' };
 };
 
 export type AppEnv = {
@@ -26,6 +32,7 @@ export const contextKeys = {
   supabase: 'supabase',
   logger: 'logger',
   config: 'config',
+  user: 'user',
 } as const satisfies Record<keyof AppVariables, keyof AppVariables>;
 
 export const getSupabase = (c: AppContext) =>
@@ -36,3 +43,6 @@ export const getLogger = (c: AppContext) =>
 
 export const getConfig = (c: AppContext) =>
   c.get(contextKeys.config) as AppConfig;
+
+export const getUser = (c: AppContext) =>
+  c.get(contextKeys.user) as AppVariables['user'] | undefined;
