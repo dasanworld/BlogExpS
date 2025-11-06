@@ -61,19 +61,15 @@ export default function SignupPage({ params }: SignupPageProps) {
 
   const handleChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-      const target = event.target as HTMLInputElement | HTMLSelectElement;
-      const { name } = target;
+      const el = event.currentTarget as HTMLInputElement | HTMLSelectElement;
+      const { name } = el;
 
-      if (
-        'checked' in target &&
-        (target as HTMLInputElement).type === 'checkbox'
-      ) {
-        const checked = (target as HTMLInputElement).checked;
-        setFormState((previous) => ({ ...previous, [name]: checked }));
-      } else {
-        const value = (target as HTMLInputElement | HTMLSelectElement).value;
-        setFormState((previous) => ({ ...previous, [name]: value }));
+      if (el instanceof HTMLInputElement && el.type === 'checkbox') {
+        setFormState((previous) => ({ ...previous, [name]: el.checked }));
+        return;
       }
+
+      setFormState((previous) => ({ ...previous, [name]: (el as HTMLInputElement | HTMLSelectElement).value }));
     },
     [],
   );
