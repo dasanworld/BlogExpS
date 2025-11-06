@@ -15,7 +15,7 @@ export default function CampaignDetailPage() {
 
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-6 text-white">
+      <main className="min-h-screen bg-gradient-to-br from-white via-blue-50 to-indigo-50 p-6 text-gray-900">
         <div className="mx-auto w-full max-w-3xl">상세 정보를 불러오는 중...</div>
       </main>
     );
@@ -24,9 +24,9 @@ export default function CampaignDetailPage() {
   if (isError) {
     const msg = error instanceof Error ? error.message : '상세 정보를 불러오지 못했습니다.';
     return (
-      <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-6 text-white">
+      <main className="min-h-screen bg-gradient-to-br from-white via-blue-50 to-indigo-50 p-6 text-gray-900">
         <div className="mx-auto w-full max-w-3xl space-y-3">
-          <p className="text-red-300">{msg}</p>
+          <p className="text-red-600">{msg}</p>
           <div className="flex items-center gap-2">
             <Button variant="secondary" onClick={() => refetch()}>
               다시 시도
@@ -43,7 +43,7 @@ export default function CampaignDetailPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-6 text-white">
+    <main className="min-h-screen bg-gradient-to-br from-white via-blue-50 to-indigo-50 p-6 text-gray-900">
       <div className="mx-auto w-full max-w-3xl">
         <CampaignDetailView data={data} />
         <div className="mt-6">

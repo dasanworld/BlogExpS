@@ -18,11 +18,14 @@ export function CampaignDetailView({
   const allowed = applyEligibility?.allowed ?? false;
   const reason = applyEligibility?.reason;
 
+  const statusLabel = (s: typeof campaign.status) =>
+    s === 'recruiting' ? '모집중' : s === 'closed' ? '모집종료' : '선정완료';
+
   return (
-    <Card className="space-y-4 border-slate-700 bg-slate-900/60 p-6 text-slate-100">
+    <Card className="space-y-4 border-blue-200 bg-white p-6 text-gray-900">
       <div className="flex items-start justify-between gap-3">
-        <h1 className="text-2xl font-semibold">{campaign.title}</h1>
-        <Badge variant="secondary">{campaign.status}</Badge>
+        <h1 className="text-2xl font-semibold text-gray-900">{campaign.title}</h1>
+        <Badge variant="secondary" className="bg-blue-100 text-blue-800">{statusLabel(campaign.status)}</Badge>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
@@ -33,8 +36,8 @@ export function CampaignDetailView({
       </div>
 
       <section className="space-y-2">
-        <h2 className="text-lg font-semibold">미션</h2>
-        <p className="whitespace-pre-wrap text-slate-200">{campaign.mission}</p>
+        <h2 className="text-lg font-semibold text-gray-900">미션</h2>
+        <p className="whitespace-pre-wrap text-gray-800">{campaign.mission}</p>
       </section>
 
       <div className="flex items-center gap-3 pt-2">
@@ -42,7 +45,7 @@ export function CampaignDetailView({
           지원하기
         </Button>
         {!allowed && (
-          <p className="text-sm text-slate-300">
+          <p className="text-sm text-gray-600">
             {reason === 'UNAUTHENTICATED' && '로그인이 필요합니다.'}
             {reason === 'FORBIDDEN_ROLE' && '인플루언서만 지원할 수 있습니다.'}
             {reason === 'INFLUENCER_PROFILE_INCOMPLETE' && '인플루언서 프로필을 완료해주세요.'}
@@ -57,10 +60,9 @@ export function CampaignDetailView({
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
-      <p className="text-xs text-slate-400">{label}</p>
-      <p className="text-sm text-slate-100">{value}</p>
+    <div className="rounded-lg border border-blue-200 bg-white p-3">
+      <p className="text-xs text-gray-500">{label}</p>
+      <p className="text-sm text-gray-900">{value}</p>
     </div>
   );
 }
-
