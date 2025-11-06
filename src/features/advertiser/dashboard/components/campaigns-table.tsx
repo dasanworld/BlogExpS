@@ -6,19 +6,21 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCloseCampaignMutation } from '../hooks/useCloseCampaignMutation';
 import { SelectionDialog } from './selection-dialog';
-import { isAxiosError } from '@/lib/remote/api-client';
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser';
 
-export function CampaignsTable() {
+export function CampaignsTable({ initial, autoFetch = true }: { initial?: { items: any[]; meta: { page: number; pageSize: number; total: number; totalPages: number } }; autoFetch?: boolean }) {
   const { user } = useCurrentUser();
   const [status, setStatus] = useState<'all' | 'recruiting' | 'closed' | 'selection_complete'>('all');
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initial?.meta.page ?? 1);
   const [openSelectId, setOpenSelectId] = useState<string | null>(null);
-  const { data, isLoading, error, refetch } = useMyCampaignsQuery({ status, page, pageSize: 10, sort: 'recent' });
+  const { data, isLoading, error, refetch } = useMyCampaignsQuery(
+    { status, page, pageSize: 10, sort: 'recent' },
+    { enabled: autoFetch && !initial, initialData: initial as any }
+  );
   const { mutateAsync: closeAsync, isPending: closing } = useCloseCampaignMutation();
 
-  const items = (data as any)?.items ?? [];
-  const meta = (data as any)?.meta ?? { page: 1, pageSize: 10, total: 0, totalPages: 1 };
+  const items = (data as any)?.items ?? initial?.items ?? [];
+  const meta = (data as any)?.meta ?? initial?.meta ?? { page: 1, pageSize: 10, total: 0, totalPages: 1 };
 
   const onClose = async (id: string) => {
     await closeAsync(id);
@@ -55,25 +57,6 @@ export function CampaignsTable() {
         <p className="text-sm text-red-600">
           목록을 불러오지 못했습니다. 권한 또는 프로필 상태를 확인해 주세요.
         </p>
-      )}
-      {error && process.env.NODE_ENV !== 'production' && (
-        <pre className="mt-2 max-h-48 overflow-auto rounded bg-slate-100 p-2 text-xs text-slate-800">
-          {(() => {
-            const e = error as any;
-            if (isAxiosError?.(e)) {
-              return JSON.stringify(
-                { status: e.response?.status, data: e.response?.data },
-                null,
-                2,
-              );
-            }
-            try {
-              return JSON.stringify(e, null, 2);
-            } catch {
-              return String(e);
-            }
-          })()}
-        </pre>
       )}
       {!isLoading && !error && items.length === 0 && (
         <p className="text-sm text-slate-500">등록된 체험단이 없습니다. 우측 상단에서 신규 등록하세요.</p>
@@ -137,17 +120,7 @@ export function CampaignsTable() {
 
       <SelectionDialog id={openSelectId} onClose={() => setOpenSelectId(null)} />
 
-      {process.env.NODE_ENV !== 'production' && (
-        <pre className="mt-3 max-h-48 overflow-auto rounded bg-slate-100 p-2 text-xs text-slate-800">
-{JSON.stringify({
-  currentUserId: user?.id,
-  note: 'myCampaigns filters campaigns.advertiser_id === currentUserId',
-  params: { status, page, pageSize: 10, sort: 'recent' },
-  meta,
-  items: items.length,
-}, null, 2)}
-        </pre>
-      )}
+      
     </section>
   );
 }

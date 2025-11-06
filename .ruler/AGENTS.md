@@ -14,3 +14,7 @@ Ruler concatenates all .md files in this directory (and subdirectories), startin
 
 - Remind: 임시저장 401은 Authorization 미첨부, 403은 user_profiles.role≠'advertiser' 인가 실패.
 - Rule: FE는 Supabase 세션 토큰을 Bearer로 항상 주입하고, 호출 전 필요한 역할을 확인·유도.
+
+// Debugging notes (Dashboards)
+- Advertiser dashboard 401/empty list often stems from missing Authorization/cookies; prefer SSR prefetch or preflight to ensure session, and send `withCredentials` + Bearer.
+- Avoid invalid DOM nesting (e.g., div inside p) in cards/badges to prevent hydration errors.

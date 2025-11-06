@@ -15,12 +15,14 @@ export default function Home() {
   const router = useRouter();
 
   // 배너용 추천 캠페인 (상위 5개, 인기순)
-  const { data: bannerData } = useCampaignsQuery({
-    status: 'recruiting',
-    page: 1,
-    pageSize: 5,
-    sort: 'popular',
-  });
+  const { data: popularData } = useCampaignsQuery(
+    { status: 'recruiting', page: 1, pageSize: 5, sort: 'popular' },
+  );
+  const popularCount = popularData?.items?.length ?? 0;
+  const { data: recentData } = useCampaignsQuery(
+    { status: 'recruiting', page: 1, pageSize: 5, sort: 'recent' },
+    { enabled: popularCount === 0 }
+  );
 
   const handleSignOut = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
@@ -172,7 +174,7 @@ export default function Home() {
         {/* Banner Section */}
         <section id="banner" className="py-8">
           <h2 className="text-3xl font-bold mb-6 text-gray-900">추천 체험단</h2>
-          <CampaignBanner campaigns={bannerData?.items ?? []} />
+          <CampaignBanner campaigns={(popularData?.items?.length ? popularData?.items : (recentData?.items ?? []))} />
         </section>
 
         {/* Campaign List Section */}

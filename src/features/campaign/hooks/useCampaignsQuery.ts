@@ -19,7 +19,10 @@ export type CampaignListParams = {
   benefitType?: string;
 };
 
-export const useCampaignsQuery = (params: CampaignListParams) => {
+export const useCampaignsQuery = (
+  params: CampaignListParams,
+  options?: { enabled?: boolean; initialData?: CampaignListResponse },
+) => {
   return useQuery<CampaignListResponse>({
     queryKey: campaignKeys.list(params),
     queryFn: async () => {
@@ -42,5 +45,7 @@ export const useCampaignsQuery = (params: CampaignListParams) => {
     },
     staleTime: 10_000,
     retry: 2,
+    enabled: options?.enabled ?? true,
+    initialData: options?.initialData,
   });
 };

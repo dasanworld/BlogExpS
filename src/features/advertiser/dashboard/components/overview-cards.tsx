@@ -10,13 +10,22 @@ const CountCard = ({ title, count }: { title: string; count: number }) => (
   </Card>
 );
 
-export function OverviewCards() {
-  const r = useMyCampaignsQuery({ status: 'recruiting', page: 1, pageSize: 1, sort: 'recent' });
-  const c = useMyCampaignsQuery({ status: 'closed', page: 1, pageSize: 1, sort: 'recent' });
-  const s = useMyCampaignsQuery({ status: 'selection_complete', page: 1, pageSize: 1, sort: 'recent' });
-  const recruiting = (r.data as any)?.meta?.total ?? 0;
-  const closed = (c.data as any)?.meta?.total ?? 0;
-  const selected = (s.data as any)?.meta?.total ?? 0;
+export function OverviewCards({ initialCounts }: { initialCounts?: { recruiting: number; closed: number; selection_complete: number } }) {
+  const r = useMyCampaignsQuery(
+    { status: 'recruiting', page: 1, pageSize: 1, sort: 'recent' },
+    { initialData: initialCounts ? { items: [], meta: { page: 1, pageSize: 1, total: initialCounts.recruiting, totalPages: 1 } } as any : undefined },
+  );
+  const c = useMyCampaignsQuery(
+    { status: 'closed', page: 1, pageSize: 1, sort: 'recent' },
+    { initialData: initialCounts ? { items: [], meta: { page: 1, pageSize: 1, total: initialCounts.closed, totalPages: 1 } } as any : undefined },
+  );
+  const s = useMyCampaignsQuery(
+    { status: 'selection_complete', page: 1, pageSize: 1, sort: 'recent' },
+    { initialData: initialCounts ? { items: [], meta: { page: 1, pageSize: 1, total: initialCounts.selection_complete, totalPages: 1 } } as any : undefined },
+  );
+  const recruiting = (r.data as any)?.meta?.total ?? initialCounts?.recruiting ?? 0;
+  const closed = (c.data as any)?.meta?.total ?? initialCounts?.closed ?? 0;
+  const selected = (s.data as any)?.meta?.total ?? initialCounts?.selection_complete ?? 0;
   return (
     <section className="grid gap-4 md:grid-cols-3">
       <CountCard title="모집중" count={recruiting} />

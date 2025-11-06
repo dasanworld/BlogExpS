@@ -11,7 +11,22 @@ import { Button } from '@/components/ui/button';
 import { AdvertiserProfileCard } from './advertiser-profile-card';
 import { useRouter } from 'next/navigation';
 
-export function AdvertiserDashboard() {
+type InitialProfile = {
+  id?: string;
+  profileCompleted?: boolean;
+  verificationStatus?: 'pending' | 'verified' | 'failed';
+  companyName?: string;
+  category?: string;
+  businessRegistrationNumber?: string;
+  location?: string;
+};
+
+type InitialList = {
+  items: Array<any>;
+  meta: { page: number; pageSize: number; total: number; totalPages: number };
+};
+
+export function AdvertiserDashboard({ initialProfile, initialList, initialCounts }: { initialProfile?: InitialProfile; initialList?: InitialList; initialCounts?: { recruiting: number; closed: number; selection_complete: number } }) {
   const router = useRouter();
   const [guard, setGuard] = useState<{
     ok: boolean;
@@ -29,21 +44,33 @@ export function AdvertiserDashboard() {
   useEffect(() => {
     const run = async () => {
       try {
+        if (initialProfile) {
+          setGuard({ ok: true,
+            profileCompleted: initialProfile.profileCompleted,
+            verificationStatus: initialProfile.verificationStatus,
+            companyName: initialProfile.companyName,
+            category: initialProfile.category,
+            businessRegistrationNumber: initialProfile.businessRegistrationNumber,
+            location: initialProfile.location,
+            profileId: initialProfile.id,
+          });
+          return;
+        }
         const supabase = getSupabaseBrowserClient();
         const session = await supabase.auth.getSession();
         const access = session.data.session?.access_token;
         const headers: Record<string, string> = {};
         if (access) headers['Authorization'] = `Bearer ${access}`;
         const { data } = await apiClient.get(ADVERTISER_API_ROUTES.me, { headers, withCredentials: true });
-        const profileCompleted = Boolean((data as any)?.profileCompleted);
-        const verificationStatus = (data as any)?.verificationStatus as 'pending' | 'verified' | 'failed' | undefined;
-        const companyName = (data as any)?.companyName as string | undefined;
-        const category = (data as any)?.category as string | undefined;
-        const businessRegistrationNumber = (data as any)?.businessRegistrationNumber as string | undefined;
-        const location = (data as any)?.location as string | undefined;
-        const profileId = (data as any)?.id as string | undefined;
-        // Allow dashboard access for advertisers even if profile is incomplete (list/view allowed)
-        setGuard({ ok: true, profileCompleted, verificationStatus, companyName, category, businessRegistrationNumber, location, profileId });
+        setGuard({ ok: true,
+          profileCompleted: Boolean((data as any)?.profileCompleted),
+          verificationStatus: (data as any)?.verificationStatus,
+          companyName: (data as any)?.companyName,
+          category: (data as any)?.category,
+          businessRegistrationNumber: (data as any)?.businessRegistrationNumber,
+          location: (data as any)?.location,
+          profileId: (data as any)?.id,
+        });
       } catch (e) {
         if (isAxiosError(e) && e.response?.status === 401) {
           setGuard({ ok: false, needLogin: true, message: '로그인이 필요합니다.' });
@@ -89,8 +116,8 @@ export function AdvertiserDashboard() {
           <Button variant="secondary" size="sm" onClick={() => router.back()}>
             뒤로가기
           </Button>
-          <a href="/dashboard">
-            <Button variant="secondary" size="sm">대시보드로 가기</Button>
+          <a href="/">
+            <Button variant="secondary" size="sm">홈으로</Button>
           </a>
         </div>
         <div className="flex items-center gap-2">
@@ -112,10 +139,10 @@ export function AdvertiserDashboard() {
           <a href="/advertisers/profile" className="ml-2 underline">프로필 바로가기</a>
         </div>
       )}
-      <OverviewCards />
+      <OverviewCards initialCounts={initialCounts} />
       <section>
         <h3 className="mb-2 text-lg font-medium">내가 등록한 체험단</h3>
-        <CampaignsTable />
+        <CampaignsTable initial={initialList} autoFetch={!initialList} />
       </section>
     </div>
   );

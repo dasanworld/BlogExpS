@@ -91,11 +91,7 @@ export function CampaignListSection() {
         </div>
       </div>
 
-      {process.env.NODE_ENV !== 'production' && (
-        <pre className="mt-2 max-h-48 overflow-auto rounded bg-slate-100 p-2 text-xs text-slate-800">
-{JSON.stringify({ params, meta: data?.meta, items: data?.items?.length }, null, 2)}
-        </pre>
-      )}
+      
     </section>
   );
 }

@@ -1,5 +1,5 @@
 import { createMiddleware } from 'hono/factory';
-import { getSupabase, getLogger, type AppEnv, contextKeys } from '@/backend/hono/context';
+import { getSupabase, type AppEnv, contextKeys } from '@/backend/hono/context';
 import { failure } from '@/backend/http/response';
 import { influencerErrorCodes } from '@/features/influencer/backend/error';
 
@@ -8,9 +8,7 @@ export type AuthUser = { id: string; email?: string; role?: string | null };
 export const withAuth = (opts?: { requiredRole?: 'influencer' | 'advertiser' }) =>
   createMiddleware<AppEnv>(async (c, next) => {
     const supabase = getSupabase(c);
-    const logger = getLogger(c);
     const authz = c.req.header('authorization') || c.req.header('Authorization');
-    const hasAuthzHeader = Boolean(authz);
     let token = authz?.toLowerCase().startsWith('bearer ')
       ? authz.split(' ')[1]
       : undefined;
@@ -19,26 +17,18 @@ export const withAuth = (opts?: { requiredRole?: 'influencer' | 'advertiser' }) 
       const m = /(?:^|;\s*)sb-access-token=([^;]+)/.exec(cookie);
       if (m) token = decodeURIComponent(m[1]);
     }
-    const hasCookieToken = Boolean(!token && (c.req.header('cookie') || '').includes('sb-access-token='));
 
     if (!token) {
-      logger.warn('withAuth: missing token', { path: c.req.path, hasAuthzHeader, hasCookieToken });
       return c.json(
-        failure(401, influencerErrorCodes.unauthorized, '인증 토큰이 필요합니다.', {
-          hasAuthzHeader,
-          hasCookieToken,
-        }),
+        failure(401, influencerErrorCodes.unauthorized, '인증 토큰이 필요합니다.'),
         401,
       );
     }
 
     const { data, error } = await supabase.auth.getUser(token);
     if (error || !data?.user) {
-      logger.warn('withAuth: invalid token', { path: c.req.path, error: error?.message });
       return c.json(
-        failure(401, influencerErrorCodes.unauthorized, '유효하지 않은 인증 토큰입니다.', {
-          reason: error?.message ?? 'NO_USER',
-        }),
+        failure(401, influencerErrorCodes.unauthorized, '유효하지 않은 인증 토큰입니다.'),
         401,
       );
     }
@@ -53,12 +43,8 @@ export const withAuth = (opts?: { requiredRole?: 'influencer' | 'advertiser' }) 
 
     const role = profile?.role as 'influencer' | 'advertiser' | undefined;
     if (opts?.requiredRole && role !== opts.requiredRole) {
-      logger.warn('withAuth: forbidden role', { path: c.req.path, role, requiredRole: opts.requiredRole });
       return c.json(
-        failure(403, influencerErrorCodes.forbiddenRole, '요청 권한이 없습니다.', {
-          role,
-          requiredRole: opts.requiredRole,
-        }),
+        failure(403, influencerErrorCodes.forbiddenRole, '요청 권한이 없습니다.'),
         403,
       );
     }

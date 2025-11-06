@@ -17,7 +17,7 @@ export type MyCampaignsParams = {
   sort?: 'recent';
 };
 
-export const useMyCampaignsQuery = (params: MyCampaignsParams) => {
+export const useMyCampaignsQuery = (params: MyCampaignsParams, options?: { enabled?: boolean; initialData?: CampaignListResponse }) => {
   const { isAuthenticated, isLoading } = useCurrentUser();
   return useQuery<CampaignListResponse, unknown>({
     queryKey: advertiserCampaignKeys.list(params),
@@ -41,6 +41,7 @@ export const useMyCampaignsQuery = (params: MyCampaignsParams) => {
     },
     staleTime: 10_000,
     retry: 2,
-    enabled: isAuthenticated && !isLoading,
+    enabled: (options?.enabled ?? (isAuthenticated && !isLoading)) as boolean,
+    initialData: options?.initialData,
   });
 };
