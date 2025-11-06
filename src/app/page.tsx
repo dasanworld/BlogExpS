@@ -105,6 +105,13 @@ export default function Home() {
             >
               대시보드
             </Link>
+            <Link
+              href="/advertisers/profile"
+              className="rounded-md border border-slate-600 px-3 py-1 transition hover:border-slate-400 hover:bg-slate-800"
+              title="광고주 프로필 등록/수정"
+            >
+              광고주 정보 등록
+            </Link>
             <button
               type="button"
               onClick={handleSignOut}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "./providers";
+import { Toaster } from "@/components/ui/toaster";
 import { loadCurrentUser } from "@/features/auth/server/load-current-user";
 import { CurrentUserProvider } from "@/features/auth/context/current-user-context";
 
@@ -24,6 +25,7 @@ export default async function RootLayout({
             {children}
           </CurrentUserProvider>
         </Providers>
+        <Toaster />
       </body>
     </html>
   );
