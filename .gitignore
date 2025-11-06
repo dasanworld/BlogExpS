@@ -91,3 +91,5 @@ out
 # Documentation
 docs/prd.md
 docs/userflow.md
+
+.gitignore
