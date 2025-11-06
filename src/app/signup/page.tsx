@@ -4,13 +4,18 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
+import { AUTH_API_ROUTES } from "@/features/auth/routes";
+import { AUTH_MESSAGES } from "@/features/auth/messages";
 
 const defaultFormState = {
   email: "",
   password: "",
   confirmPassword: "",
+  name: "",
+  phone: "",
+  role: "" as "advertiser" | "influencer" | "",
+  termsAgreed: false,
 };
 
 type SignupPageProps = {
@@ -21,7 +26,7 @@ export default function SignupPage({ params }: SignupPageProps) {
   void params;
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated, refresh } = useCurrentUser();
+  const { isAuthenticated } = useCurrentUser();
   const [formState, setFormState] = useState(defaultFormState);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -38,16 +43,39 @@ export default function SignupPage({ params }: SignupPageProps) {
     () =>
       !formState.email.trim() ||
       !formState.password.trim() ||
-      formState.password !== formState.confirmPassword,
-    [formState.confirmPassword, formState.email, formState.password]
+      formState.password !== formState.confirmPassword ||
+      !formState.name.trim() ||
+      !formState.phone.trim() ||
+      (formState.role !== "advertiser" && formState.role !== "influencer") ||
+      !formState.termsAgreed,
+    [
+      formState.confirmPassword,
+      formState.email,
+      formState.password,
+      formState.name,
+      formState.phone,
+      formState.role,
+      formState.termsAgreed,
+    ]
   );
 
   const handleChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const { name, value } = event.target;
-      setFormState((previous) => ({ ...previous, [name]: value }));
+    (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      const target = event.target as HTMLInputElement | HTMLSelectElement;
+      const { name } = target;
+
+      if (
+        'checked' in target &&
+        (target as HTMLInputElement).type === 'checkbox'
+      ) {
+        const checked = (target as HTMLInputElement).checked;
+        setFormState((previous) => ({ ...previous, [name]: checked }));
+      } else {
+        const value = (target as HTMLInputElement | HTMLSelectElement).value;
+        setFormState((previous) => ({ ...previous, [name]: value }));
+      }
     },
-    []
+    [],
   );
 
   const handleSubmit = useCallback(
@@ -58,46 +86,53 @@ export default function SignupPage({ params }: SignupPageProps) {
       setInfoMessage(null);
 
       if (formState.password !== formState.confirmPassword) {
-        setErrorMessage("비밀번호가 일치하지 않습니다.");
+        setErrorMessage(AUTH_MESSAGES.signup.invalidPasswordConfirm);
         setIsSubmitting(false);
         return;
       }
 
-      const supabase = getSupabaseBrowserClient();
-
       try {
-        const result = await supabase.auth.signUp({
-          email: formState.email,
-          password: formState.password,
+        const response = await fetch(AUTH_API_ROUTES.signup, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: formState.email,
+            password: formState.password,
+            name: formState.name,
+            phone: formState.phone,
+            role: formState.role,
+            termsAgreed: formState.termsAgreed,
+          }),
         });
 
-        if (result.error) {
-          setErrorMessage(result.error.message ?? "회원가입에 실패했습니다.");
+        const payload = await response.json();
+        if (!response.ok) {
+          const message = payload?.error?.message ?? AUTH_MESSAGES.signup.genericFailure;
+          setErrorMessage(message);
           setIsSubmitting(false);
           return;
         }
 
-        await refresh();
-
-        const redirectedFrom = searchParams.get("redirectedFrom") ?? "/";
-
-        if (result.data.session) {
-          router.replace(redirectedFrom);
-          return;
-        }
-
-        setInfoMessage(
-          "확인 이메일을 보냈습니다. 이메일 인증 후 로그인해 주세요."
-        );
-        router.prefetch("/login");
+        const message: string = payload?.message ?? AUTH_MESSAGES.signup.sessionActive;
+        setInfoMessage(message);
+        router.prefetch('/login');
         setFormState(defaultFormState);
       } catch (error) {
-        setErrorMessage("회원가입 처리 중 문제가 발생했습니다.");
+        setErrorMessage(AUTH_MESSAGES.signup.processingError);
       } finally {
         setIsSubmitting(false);
       }
     },
-    [formState.confirmPassword, formState.email, formState.password, refresh, router, searchParams]
+    [
+      formState.confirmPassword,
+      formState.email,
+      formState.password,
+      formState.name,
+      formState.phone,
+      formState.role,
+      formState.termsAgreed,
+      router,
+    ]
   );
 
   if (isAuthenticated) {
@@ -130,6 +165,30 @@ export default function SignupPage({ params }: SignupPageProps) {
             />
           </label>
           <label className="flex flex-col gap-2 text-sm text-slate-700">
+            이름
+            <input
+              type="text"
+              name="name"
+              autoComplete="name"
+              required
+              value={formState.name}
+              onChange={handleChange}
+              className="rounded-md border border-slate-300 px-3 py-2 focus:border-slate-500 focus:outline-none"
+            />
+          </label>
+          <label className="flex flex-col gap-2 text-sm text-slate-700">
+            휴대폰번호
+            <input
+              type="tel"
+              name="phone"
+              autoComplete="tel"
+              required
+              value={formState.phone}
+              onChange={handleChange}
+              className="rounded-md border border-slate-300 px-3 py-2 focus:border-slate-500 focus:outline-none"
+            />
+          </label>
+          <label className="flex flex-col gap-2 text-sm text-slate-700">
             비밀번호
             <input
               type="password"
@@ -152,6 +211,30 @@ export default function SignupPage({ params }: SignupPageProps) {
               onChange={handleChange}
               className="rounded-md border border-slate-300 px-3 py-2 focus:border-slate-500 focus:outline-none"
             />
+          </label>
+          <label className="flex flex-col gap-2 text-sm text-slate-700">
+            역할 선택
+            <select
+              name="role"
+              required
+              value={formState.role}
+              onChange={handleChange}
+              className="rounded-md border border-slate-300 px-3 py-2 focus:border-slate-500 focus:outline-none"
+            >
+              <option value="">선택하세요</option>
+              <option value="advertiser">광고주</option>
+              <option value="influencer">인플루언서</option>
+            </select>
+          </label>
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              name="termsAgreed"
+              checked={formState.termsAgreed}
+              onChange={handleChange}
+              className="h-4 w-4"
+            />
+            약관에 동의합니다(필수)
           </label>
           {errorMessage ? (
             <p className="text-sm text-rose-500">{errorMessage}</p>

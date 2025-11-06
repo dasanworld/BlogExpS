@@ -1,7 +1,7 @@
 import type { Hono } from 'hono';
 import { z } from 'zod';
 import { respond, failure } from '@/backend/http/response';
-import { getLogger, getSupabase, type AppEnv } from '@/backend/hono/context';
+import { getLogger, getSupabase, type AppEnv, type AppContext } from '@/backend/hono/context';
 import { SignupRequestSchema, type SignupRequest } from './schema';
 import { signupOrchestrate } from './service';
 import { authErrorCodes } from './error';
@@ -20,7 +20,7 @@ const parseJsonSafe = async <T>(req: Request, schema: z.ZodSchema<T>) => {
 };
 
 export const registerAuthRoutes = (app: Hono<AppEnv>) => {
-  app.post('/auth/signup', async (c) => {
+  const handler = async (c: AppContext) => {
     const logger = getLogger(c);
     const supabase = getSupabase(c);
 
@@ -34,9 +34,13 @@ export const registerAuthRoutes = (app: Hono<AppEnv>) => {
 
     const result = await signupOrchestrate(supabase, parsed.data);
     if (!result.ok) {
-      logger.error('Signup failed:', result.error);
+      const err = (result as unknown as { error?: unknown }).error;
+      logger.error('Signup failed:', err);
     }
     return respond(c, result);
-  });
-};
+  };
 
+  // Primary route (wrapped by Next.js app/api/[[...hono]])
+  app.post('/auth/signup', handler);
+  app.post('/api/auth/signup', handler);
+};

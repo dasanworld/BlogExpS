@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { success, failure, type HandlerResult } from '@/backend/http/response';
 import type { SignupRequest, SignupResponse } from './schema';
 import { authErrorCodes } from './error';
+import { AUTH_MESSAGES } from '@/features/auth/messages';
 
 export const signupOrchestrate = async (
   supabase: SupabaseClient,
@@ -9,7 +10,13 @@ export const signupOrchestrate = async (
 ): Promise<HandlerResult<SignupResponse, typeof authErrorCodes[keyof typeof authErrorCodes], unknown>> => {
   const { email, password, name, phone, role } = payload;
 
-  const authResult = await supabase.auth.signUp({ email, password });
+  const authResult = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { name, phone, role },
+    },
+  });
   if (authResult.error) {
     return failure(400, authErrorCodes.authSignupFailed, authResult.error.message);
   }
@@ -31,7 +38,21 @@ export const signupOrchestrate = async (
       .single();
 
     if (insertResult.error) {
-      return failure(500, authErrorCodes.profileBootstrapFailed, '프로필 초기화에 실패했습니다.', insertResult.error.message);
+      const err = insertResult.error as { code?: string; message: string };
+      // Duplicate (already bootstrapped) → treat as success
+      if (err?.code === '23505') {
+        // continue
+      } else {
+        // Surface details to help diagnosis (e.g., missing table, enum mismatch)
+        const hint = err?.code === '42P01'
+          ? '데이터베이스 마이그레이션이 적용되지 않았습니다. user_profiles 테이블을 생성하세요.'
+          : undefined;
+        return failure(
+          500,
+          authErrorCodes.profileBootstrapFailed,
+          hint ? `${err.message} (${hint})` : err.message,
+        );
+      }
     }
   }
 
@@ -41,10 +62,9 @@ export const signupOrchestrate = async (
       userId: user?.id,
       nextAction: hasSession ? 'session_active' : 'verify_email',
       message: hasSession
-        ? '가입이 완료되었습니다.'
-        : '확인 이메일을 보냈습니다. 이메일 인증 후 로그인해 주세요.',
+        ? AUTH_MESSAGES.signup.sessionActive
+        : AUTH_MESSAGES.signup.verifyEmail,
     },
     201,
   );
 };
-
