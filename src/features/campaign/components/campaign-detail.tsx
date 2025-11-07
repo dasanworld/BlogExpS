@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import type { CampaignDetailResponse } from '@/features/campaign/backend/schema';
 
 export function CampaignDetailView({ data }: { data: CampaignDetailResponse }) {
-  const { campaign, applyEligibility, debug } = data;
+  const { campaign, applyEligibility } = data;
   const start = new Date(campaign.recruitment_start_date);
   const end = new Date(campaign.recruitment_end_date);
   const period = `${start.toLocaleDateString()} ~ ${end.toLocaleDateString()}`;
@@ -51,20 +51,6 @@ export function CampaignDetailView({ data }: { data: CampaignDetailResponse }) {
         )}
       </div>
 
-      {debug && (
-        <section className="mt-4 rounded-lg border border-dashed border-blue-200/70 bg-blue-50/50 p-4 text-sm text-gray-700">
-          <h3 className="mb-3 text-sm font-semibold text-gray-900">디버그 - 모집 기간 비교</h3>
-          <div className="grid gap-2 md:grid-cols-2">
-            <DebugRow label="서버 시각" value={new Date(debug.serverNowIso).toLocaleString()} />
-            <DebugRow label="캠페인 상태" value={debug.status} />
-            <DebugRow label="서울 오늘 인덱스" value={String(debug.seoulTodayIndex)} />
-            <DebugRow label="시작 인덱스" value={debug.startIndex === null ? 'null' : String(debug.startIndex)} />
-            <DebugRow label="종료 인덱스" value={debug.endIndex === null ? 'null' : String(debug.endIndex)} />
-            <DebugRow label="시작일 (DB)" value={debug.startDate ?? '없음'} />
-            <DebugRow label="종료일 (DB)" value={debug.endDate ?? '없음'} />
-          </div>
-        </section>
-      )}
     </Card>
   );
 }
@@ -74,15 +60,6 @@ function Info({ label, value }: { label: string; value: string }) {
     <div className="rounded-lg border border-blue-200 bg-white p-3">
       <p className="text-xs text-gray-500">{label}</p>
       <p className="text-sm text-gray-900">{value}</p>
-    </div>
-  );
-}
-
-function DebugRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col rounded-md border border-blue-100 bg-white/80 px-3 py-2">
-      <span className="text-xs text-gray-500">{label}</span>
-      <span className="text-sm font-medium text-gray-900">{value}</span>
     </div>
   );
 }

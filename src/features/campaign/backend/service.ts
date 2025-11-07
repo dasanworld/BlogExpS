@@ -151,20 +151,7 @@ export const getCampaignById = async (
       }
     }
 
-    const debug =
-      process.env.NODE_ENV === 'production'
-        ? undefined
-        : {
-            serverNowIso: new Date().toISOString(),
-            seoulTodayIndex: todayIndex,
-            startIndex,
-            endIndex,
-            startDate: campaign.recruitment_start_date ?? null,
-            endDate: campaign.recruitment_end_date ?? null,
-            status: campaign.status,
-          };
-
-    return success({ campaign, applyEligibility, debug });
+    return success({ campaign, applyEligibility });
   } catch (e) {
     return failure(500, campaignErrorCodes.fetchError, 'Failed to fetch campaign.', e);
   }
