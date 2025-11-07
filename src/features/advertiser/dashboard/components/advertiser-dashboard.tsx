@@ -10,6 +10,7 @@ import { CreateCampaignDialog } from './create-campaign-dialog';
 import { Button } from '@/components/ui/button';
 import { AdvertiserProfileCard } from './advertiser-profile-card';
 import { useRouter } from 'next/navigation';
+import { GlobalNavigation } from '@/features/layout/components/global-navigation';
 
 type InitialProfile = {
   id?: string;
@@ -84,66 +85,82 @@ export function AdvertiserDashboard({ initialProfile, initialList, initialCounts
 
   if (!guard.ok) {
     return (
-      <section className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-900">
-        <h3 className="text-lg font-medium">광고주 전용 대시보드</h3>
-        {guard.needLogin ? (
-          <>
-            <p className="mt-2 text-sm">로그인이 필요합니다.</p>
-            <div className="mt-3">
-              <a href="/login">
-                <Button size="sm" variant="secondary">로그인하기</Button>
-              </a>
-            </div>
-          </>
-        ) : (
-          <>
-            <p className="mt-2 text-sm">접근 권한이 없거나 광고주 프로필이 완료되지 않았습니다.</p>
-            <div className="mt-3">
-              <a href="/advertisers/profile">
-                <Button size="sm" variant="secondary">광고주 프로필로 이동</Button>
-              </a>
-            </div>
-          </>
-        )}
-      </section>
+      <div className="min-h-screen bg-gradient-to-b from-white via-blue-50/40 to-white text-slate-900">
+        <GlobalNavigation
+          links={[
+            { label: '홈', href: '/' },
+            { label: '광고주 프로필', href: '/advertisers/profile' },
+          ]}
+        />
+        <main className="mx-auto max-w-3xl px-6 pb-12 pt-8">
+          <section className="rounded-lg border border-amber-300 bg-amber-50 p-5 text-amber-900">
+            <h3 className="text-lg font-medium">광고주 전용 대시보드</h3>
+            {guard.needLogin ? (
+              <>
+                <p className="mt-2 text-sm">로그인이 필요합니다.</p>
+                <div className="mt-3">
+                  <a href="/login">
+                    <Button size="sm" variant="secondary">
+                      로그인하기
+                    </Button>
+                  </a>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="mt-2 text-sm">접근 권한이 없거나 광고주 프로필이 완료되지 않았습니다.</p>
+                <div className="mt-3">
+                  <a href="/advertisers/profile">
+                    <Button size="sm" variant="secondary">
+                      광고주 프로필로 이동
+                    </Button>
+                  </a>
+                </div>
+              </>
+            )}
+          </section>
+        </main>
+      </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={() => router.back()}>
-            뒤로가기
-          </Button>
-          <a href="/">
-            <Button variant="secondary" size="sm">홈으로</Button>
-          </a>
-        </div>
-        <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-semibold">광고주 대시보드</h2>
-        </div>
-        <CreateCampaignDialog disabled={!guard.profileCompleted} />
-      </div>
-      <AdvertiserProfileCard
-        profileCompleted={guard.profileCompleted}
-        verificationStatus={guard.verificationStatus}
-        companyName={guard.companyName}
-        category={guard.category}
-        businessRegistrationNumber={guard.businessRegistrationNumber}
-        location={guard.location}
+    <div className="min-h-screen bg-gradient-to-b from-white via-blue-50/40 to-white text-slate-900">
+      <GlobalNavigation
+        links={[
+          { label: '홈', href: '/' },
+          { label: '광고주 프로필', href: '/advertisers/profile' },
+          { label: '내 체험단', href: '#my-campaigns' },
+        ]}
       />
-      {!guard.profileCompleted && (
-        <div className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-          신규 체험단 등록은 광고주 프로필 완료 후 이용 가능합니다.
-          <a href="/advertisers/profile" className="ml-2 underline">프로필 바로가기</a>
+      <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 pb-12 pt-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm uppercase tracking-[0.3em] text-blue-500/80">Advertiser Console</p>
+            <h2 className="mt-2 text-3xl font-semibold text-slate-900">광고주 대시보드</h2>
+          </div>
+          <CreateCampaignDialog disabled={!guard.profileCompleted} />
         </div>
-      )}
-      <OverviewCards initialCounts={initialCounts} />
-      <section>
-        <h3 className="mb-2 text-lg font-medium">내가 등록한 체험단</h3>
-        <CampaignsTable initial={initialList} autoFetch={!initialList} />
-      </section>
+        <AdvertiserProfileCard
+          profileCompleted={guard.profileCompleted}
+          verificationStatus={guard.verificationStatus}
+          companyName={guard.companyName}
+          category={guard.category}
+          businessRegistrationNumber={guard.businessRegistrationNumber}
+          location={guard.location}
+        />
+        {!guard.profileCompleted && (
+          <div className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            신규 체험단 등록은 광고주 프로필 완료 후 이용 가능합니다.
+            <a href="/advertisers/profile" className="ml-2 underline">프로필 바로가기</a>
+          </div>
+        )}
+        <OverviewCards initialCounts={initialCounts} />
+        <section id="my-campaigns">
+          <h3 className="mb-2 text-lg font-medium">내가 등록한 체험단</h3>
+          <CampaignsTable initial={initialList} autoFetch={!initialList} />
+        </section>
+      </main>
     </div>
   );
 }

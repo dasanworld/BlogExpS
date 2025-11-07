@@ -14,6 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
+import { GlobalNavigation } from "@/features/layout/components/global-navigation";
 
 const FormSchema = z.object({
   companyName: z.string().min(1, "업체명을 입력하세요"),
@@ -168,90 +169,104 @@ export default function AdvertiserProfilePage() {
   }, [status]);
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <CardTitle>광고주 정보 등록</CardTitle>
-              <CardDescription>
-                회사 기본 정보를 입력해 프로필을 완료하세요.
-              </CardDescription>
-            </div>
-            {loading ? null : statusLabel}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-              <FormField
-                control={form.control}
-                name="companyName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>업체명</FormLabel>
-                    <FormControl>
-                      <Input placeholder="예) 오렌지 컴퍼니" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>위치</FormLabel>
-                    <FormControl>
-                      <Input placeholder="예) 서울시 강남구" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>카테고리</FormLabel>
-                    <FormControl>
-                      <Input placeholder="예) F&B, 리테일 등" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="businessRegistrationNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>사업자등록번호</FormLabel>
-                    <FormControl>
-                      <Input inputMode="numeric" placeholder="숫자만 입력" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="flex items-center gap-3 pt-2">
-                <Button type="submit" disabled={!form.formState.isValid || submitting}>
-                  임시저장
-                </Button>
-                <Button type="button" variant="outline" onClick={onSubmitFinal} disabled={submitting}>
-                  제출
-                </Button>
+    <div className="min-h-screen bg-gradient-to-b from-white via-blue-50/40 to-white text-slate-900">
+      <GlobalNavigation
+        links={[
+          { label: "홈", href: "/" },
+          { label: "광고주 대시보드", href: "/advertisers/dashboard" },
+          { label: "광고주 프로필", href: "/advertisers/profile" },
+        ]}
+      />
+      <main className="mx-auto max-w-3xl px-6 pb-12 pt-8">
+        <div className="mb-6">
+          <p className="text-sm uppercase tracking-[0.3em] text-blue-500/80">Advertiser Profile</p>
+          <h1 className="mt-2 text-3xl font-semibold text-slate-900">광고주 정보 등록</h1>
+          <p className="text-sm text-slate-500">회사 기본 정보를 입력해 프로필을 완료하세요.</p>
+        </div>
+        <Card>
+          <CardHeader>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <CardTitle>프로필 정보</CardTitle>
+                <CardDescription>
+                  필수 항목을 모두 입력하면 광고주 대시보드에서 체험단을 등록할 수 있습니다.
+                </CardDescription>
               </div>
-            </form>
-          </Form>
-          {serverMessage && (
-            <p className="text-sm text-muted-foreground mt-3">{serverMessage}</p>
-          )}
-        </CardContent>
-        <CardFooter className="justify-end"></CardFooter>
-      </Card>
+              {loading ? null : statusLabel}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+                <FormField
+                  control={form.control}
+                  name="companyName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>업체명</FormLabel>
+                      <FormControl>
+                        <Input placeholder="예) 오렌지 컴퍼니" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>위치</FormLabel>
+                      <FormControl>
+                        <Input placeholder="예) 서울시 강남구" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>카테고리</FormLabel>
+                      <FormControl>
+                        <Input placeholder="예) F&B, 리테일 등" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="businessRegistrationNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>사업자등록번호</FormLabel>
+                      <FormControl>
+                        <Input inputMode="numeric" placeholder="숫자만 입력" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex items-center gap-3 pt-2">
+                  <Button type="submit" disabled={!form.formState.isValid || submitting}>
+                    임시저장
+                  </Button>
+                  <Button type="button" variant="outline" onClick={onSubmitFinal} disabled={submitting}>
+                    제출
+                  </Button>
+                </div>
+              </form>
+            </Form>
+            {serverMessage && (
+              <p className="mt-3 text-sm text-muted-foreground">{serverMessage}</p>
+            )}
+          </CardContent>
+          <CardFooter className="justify-end" />
+        </Card>
+      </main>
     </div>
   );
 }
