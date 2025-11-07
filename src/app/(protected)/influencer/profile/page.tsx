@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { INFLUENCER_API_ROUTES } from "@/features/influencer/routes";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
 import { INFLUENCER_MESSAGES } from "@/features/influencer/messages";
+import { GlobalNavigation } from "@/features/layout/components/global-navigation";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 type Channel = {
   id?: string;
@@ -130,108 +132,133 @@ export default function InfluencerProfilePage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto py-8">
-      <h1 className="text-2xl font-semibold mb-4">인플루언서 정보 등록</h1>
-      {loading ? <p>로딩 중…</p> : null}
-      <div className="space-y-4">
-        <label className="block">
-          <span className="block text-sm">
-            생년월일
-            <span className="ml-1 text-red-500" aria-hidden>
-              *
-            </span>
-          </span>
-          <input
-            type="date"
-            className="border rounded px-2 py-1 w-full text-sm"
-            value={birthDate}
-            onChange={(e) => setBirthDate(e.target.value)}
-            placeholder="예: 1990-01-01"
-            aria-required
-            required
-          />
-          <span className="mt-1 block text-xs text-gray-500">예: 1990-01-01 (클릭하여 달력에서 선택)</span>
-        </label>
+    <div className="min-h-screen bg-gradient-to-b from-white via-blue-50/40 to-white text-slate-900">
+      <GlobalNavigation
+        links={[
+          { label: "홈", href: "/" },
+          { label: "인플루언서 대시보드", href: "/influencer/dashboard" },
+          { label: "인플루언서 프로필", href: "/influencer/profile" },
+        ]}
+      />
+      <main className="mx-auto max-w-3xl px-6 pb-12 pt-8">
+        <div className="mb-6">
+          <p className="text-sm uppercase tracking-[0.3em] text-blue-500/80">Influencer Profile</p>
+          <h1 className="mt-2 text-3xl font-semibold text-slate-900">인플루언서 정보 등록</h1>
+          <p className="text-sm text-slate-500">생년월일과 SNS 채널을 등록하면 지원 자격이 활성화됩니다.</p>
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>기본 정보</CardTitle>
+            <CardDescription>모든 항목은 필수입니다.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {loading && <p className="text-sm text-slate-500">로딩 중…</p>}
+            <label className="block">
+              <span className="block text-sm">
+                생년월일
+                <span className="ml-1 text-red-500" aria-hidden>
+                  *
+                </span>
+              </span>
+              <input
+                type="date"
+                className="w-full rounded border px-2 py-1 text-sm"
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+                placeholder="예: 1990-01-01"
+                aria-required
+                required
+              />
+              <span className="mt-1 block text-xs text-gray-500">예: 1990-01-01 (클릭하여 달력에서 선택)</span>
+            </label>
 
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm">SNS 채널</span>
-            <button className="text-blue-600 text-sm" type="button" onClick={onAddChannel}>
-              + 채널 추가
-            </button>
-          </div>
-          <div className="space-y-2">
-            {channels.map((c, idx) => (
-              <div key={idx} className="border rounded p-2">
-                {c._op === "delete" ? (
-                  <div className="text-gray-500 text-sm">삭제 예정</div>
-                ) : (
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="flex flex-col">
-                      <label className="text-xs text-gray-600">
-                        플랫폼
-                        <span className="ml-0.5 text-red-500" aria-hidden>*</span>
-                      </label>
-                      <input
-                        className="border rounded px-2 py-1 text-sm"
-                        placeholder="예: instagram / youtube"
-                        value={c.platform}
-                        onChange={(e) => onChangeChannel(idx, { platform: e.target.value })}
-                        aria-required
-                        required
-                      />
-                    </div>
-                    <div className="flex flex-col">
-                      <label className="text-xs text-gray-600">
-                        채널명
-                        <span className="ml-0.5 text-red-500" aria-hidden>*</span>
-                      </label>
-                      <input
-                        className="border rounded px-2 py-1 text-sm"
-                        placeholder="예: my_handle"
-                        value={c.name}
-                        onChange={(e) => onChangeChannel(idx, { name: e.target.value })}
-                        aria-required
-                        required
-                      />
-                    </div>
-                    <div className="flex flex-col">
-                      <label className="text-xs text-gray-600">
-                        채널 URL
-                        <span className="ml-0.5 text-red-500" aria-hidden>*</span>
-                      </label>
-                      <input
-                        className="border rounded px-2 py-1 text-sm"
-                        placeholder="예: https://instagram.com/my_handle"
-                        value={c.url}
-                        onChange={(e) => onChangeChannel(idx, { url: e.target.value })}
-                        aria-required
-                        required
-                      />
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm">SNS 채널</span>
+                <button className="text-blue-600 text-sm" type="button" onClick={onAddChannel}>
+                  + 채널 추가
+                </button>
+              </div>
+              <div className="space-y-2">
+                {channels.map((c, idx) => (
+                  <div key={idx} className="rounded border p-2">
+                    {c._op === "delete" ? (
+                      <div className="text-sm text-gray-500">삭제 예정</div>
+                    ) : (
+                      <div className="grid gap-2 md:grid-cols-3">
+                        <div className="flex flex-col">
+                          <label className="text-xs text-gray-600">
+                            플랫폼
+                            <span className="ml-0.5 text-red-500" aria-hidden>
+                              *
+                            </span>
+                          </label>
+                          <input
+                            className="rounded border px-2 py-1 text-sm"
+                            placeholder="예: instagram / youtube"
+                            value={c.platform}
+                            onChange={(e) => onChangeChannel(idx, { platform: e.target.value })}
+                            aria-required
+                            required
+                          />
+                        </div>
+                        <div className="flex flex-col">
+                          <label className="text-xs text-gray-600">
+                            채널명
+                            <span className="ml-0.5 text-red-500" aria-hidden>
+                              *
+                            </span>
+                          </label>
+                          <input
+                            className="rounded border px-2 py-1 text-sm"
+                            placeholder="예: my_handle"
+                            value={c.name}
+                            onChange={(e) => onChangeChannel(idx, { name: e.target.value })}
+                            aria-required
+                            required
+                          />
+                        </div>
+                        <div className="flex flex-col">
+                          <label className="text-xs text-gray-600">
+                            채널 URL
+                            <span className="ml-0.5 text-red-500" aria-hidden>
+                              *
+                            </span>
+                          </label>
+                          <input
+                            className="rounded border px-2 py-1 text-sm"
+                            placeholder="예: https://instagram.com/my_handle"
+                            value={c.url}
+                            onChange={(e) => onChangeChannel(idx, { url: e.target.value })}
+                            aria-required
+                            required
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <div className="mt-2 flex gap-2">
+                      <button className="text-sm text-red-600" type="button" onClick={() => onDeleteChannel(idx)}>
+                        삭제
+                      </button>
                     </div>
                   </div>
-                )}
-                <div className="mt-2 flex gap-2">
-                  <button className="text-red-600 text-sm" type="button" onClick={() => onDeleteChannel(idx)}>
-                    삭제
-                  </button>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
 
-        <div className="flex gap-2">
-          <button disabled={saving} onClick={save} className="border rounded px-3 py-1">
-            {saving ? "저장 중…" : "임시저장"}
-          </button>
-          <button disabled={submitting || !canSubmit} onClick={submit} className="border rounded px-3 py-1">
-            {submitting ? "제출 중…" : "제출"}
-          </button>
-        </div>
+            <div className="flex gap-2">
+              <button disabled={saving} onClick={save} className="rounded border px-3 py-1">
+                {saving ? "저장 중…" : "임시저장"}
+              </button>
+              <button disabled={submitting || !canSubmit} onClick={submit} className="rounded border px-3 py-1">
+                {submitting ? "제출 중…" : "제출"}
+              </button>
+            </div>
 
-        {message ? <p className="text-sm text-gray-700">{message}</p> : null}
-      </div>
+            {message ? <p className="text-sm text-gray-700">{message}</p> : null}
+          </CardContent>
+        </Card>
+      </main>
     </div>
   );
 }
