@@ -4,6 +4,12 @@ Centralised AI agent instructions. Add coding guidelines, style guides, and proj
 
 Ruler concatenates all .md files in this directory (and subdirectories), starting with AGENTS.md (if present), then remaining files in sorted order.
 
+# Supabase
+
+- if you need to add new table, please create migration. I'll paste it into supabase.
+- do not run supabase locally
+- store migration query for `.sql` file. in /supabase/migrations/
+
 - Remind: 404는 미등록 API 라우트, 500/RLS 에러는 user_profiles 등 테이블의 RLS/마이그레이션 누락이 원인.
 - Rule: 엔드포인트 활성화 전 Hono/Next 라우트 등록과 관련 테이블의 마이그레이션·RLS 적용을 반드시 사전 점검.
 

@@ -1,4 +1,4 @@
-import { getAdvertiserProfileServer } from "@/features/advertiser/profile/server/getProfile";
+import { getAdvertiserProfileServer } from "@/features/advertiser/dashboard/server/queries";
 import { AdvertiserProfileForm } from "@/features/advertiser/profile/components/advertiser-profile-form";
 import { redirect } from "next/navigation";
 
