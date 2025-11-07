@@ -70,8 +70,20 @@ export const ApplyEligibilitySchema = z.object({
 export const CampaignDetailSchema = CampaignItemSchema;
 export type CampaignDetail = z.infer<typeof CampaignDetailSchema>;
 
+export const CampaignDebugSchema = z.object({
+  serverNowIso: z.string(),
+  seoulTodayIndex: z.number(),
+  startIndex: z.number().nullable(),
+  endIndex: z.number().nullable(),
+  startDate: z.string().nullable(),
+  endDate: z.string().nullable(),
+  status: CampaignStatusEnum,
+});
+export type CampaignDebug = z.infer<typeof CampaignDebugSchema>;
+
 export const CampaignDetailResponseSchema = z.object({
   campaign: CampaignDetailSchema,
   applyEligibility: ApplyEligibilitySchema.optional(),
+  debug: CampaignDebugSchema.optional(),
 });
 export type CampaignDetailResponse = z.infer<typeof CampaignDetailResponseSchema>;

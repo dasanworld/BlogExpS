@@ -15,6 +15,10 @@ const calcAgeYears = (birthDate: string): number => {
   return age;
 };
 
+const flagProfileIncomplete = async (supabase: SupabaseClient, userId: string) => {
+  await supabase.from('influencer_profiles').update({ profile_completed: false }).eq('id', userId);
+};
+
 const validatePolicy = (payload: ProfileUpsertRequest) => {
   const policy = getInfluencerPolicy();
   if (policy.minAgeYears && calcAgeYears(payload.birthDate) < policy.minAgeYears) {
@@ -78,8 +82,10 @@ export const getMe = async (
     verificationStatus: String(c.verification_status) as 'pending' | 'verified' | 'failed',
   }));
 
-  const profileCompleted = Boolean(profileRes.data?.profile_completed);
-  return success({ profileCompleted, channels });
+  const profileCompleted = profileRes.data?.profile_completed ?? true;
+  const birthDateRaw = profileRes.data?.birth_date;
+  const birthDate = typeof birthDateRaw === 'string' && birthDateRaw.length >= 10 ? birthDateRaw.slice(0, 10) : null;
+  return success({ profileCompleted, birthDate, channels });
 };
 
 export const saveDraft = async (
@@ -103,7 +109,7 @@ export const saveDraft = async (
   // Upsert influencer profile
   const prof = await supabase
     .from('influencer_profiles')
-    .upsert({ id: userId, birth_date: payload.birthDate }, { onConflict: 'id' })
+    .upsert({ id: userId, birth_date: payload.birthDate, profile_completed: true }, { onConflict: 'id' })
     .select('id')
     .single();
   if (prof.error) {
@@ -115,6 +121,7 @@ export const saveDraft = async (
     const ids = norm.deletions.map((d) => d.id as string);
     const delRes = await supabase.from('influencer_channels').delete().in('id', ids);
     if (delRes.error) {
+      await flagProfileIncomplete(supabase, userId);
       return failure(500, influencerErrorCodes.dbTxFailed, delRes.error.message);
     }
   }
@@ -164,6 +171,7 @@ export const saveDraft = async (
       .upsert(upsertRows, { onConflict: 'id' })
       .select('id');
     if (upRes.error) {
+      await flagProfileIncomplete(supabase, userId);
       return failure(500, influencerErrorCodes.dbTxFailed, upRes.error.message);
     }
   }
@@ -187,6 +195,7 @@ export const submitProfile = async (
   }
 
   if (!data || data.length === 0) {
+    await flagProfileIncomplete(supabase, userId);
     return failure(400, influencerErrorCodes.submitVerifiedRequired, '검증된 채널이 필요합니다.');
   }
 

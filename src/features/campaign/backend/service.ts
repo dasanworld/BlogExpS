@@ -9,6 +9,7 @@ import {
   type CampaignDetailResponse,
 } from './schema';
 import { campaignErrorCodes, type CampaignServiceError } from './error';
+import { getSeoulTodayIndex, toSeoulDayIndex } from '@/shared/date/seoul';
 
 export const listCampaigns = async (
   supabase: SupabaseClient,
@@ -107,6 +108,9 @@ export const getCampaignById = async (
       return failure(500, campaignErrorCodes.fetchError, 'Failed to fetch campaign.', error);
     }
 
+    const todayIndex = getSeoulTodayIndex();
+    const startIndex = toSeoulDayIndex(campaign.recruitment_start_date as unknown as string);
+    const endIndex = toSeoulDayIndex(campaign.recruitment_end_date as unknown as string);
     type ApplyEligibility = ReturnType<typeof ApplyEligibilitySchema['parse']>;
     let applyEligibility: ApplyEligibility | undefined;
 
@@ -131,15 +135,14 @@ export const getCampaignById = async (
             .eq('id', userId)
             .single();
 
-          const today = new Date();
-          const start = new Date(campaign.recruitment_start_date);
-          const end = new Date(campaign.recruitment_end_date);
-          const inPeriod = today >= start && today <= end;
           const recruiting = campaign.status === 'recruiting';
+          const stillWithin =
+            recruiting &&
+            (endIndex === null || todayIndex <= endIndex);
 
           if (!infl?.profile_completed) {
             applyEligibility = { allowed: false, reason: 'INFLUENCER_PROFILE_INCOMPLETE' } as ApplyEligibility;
-          } else if (!(recruiting && inPeriod)) {
+          } else if (!stillWithin) {
             applyEligibility = { allowed: false, reason: 'CAMPAIGN_NOT_RECRUITING' } as ApplyEligibility;
           } else {
             applyEligibility = { allowed: true } as ApplyEligibility;
@@ -148,7 +151,20 @@ export const getCampaignById = async (
       }
     }
 
-    return success({ campaign, applyEligibility });
+    const debug =
+      process.env.NODE_ENV === 'production'
+        ? undefined
+        : {
+            serverNowIso: new Date().toISOString(),
+            seoulTodayIndex: todayIndex,
+            startIndex,
+            endIndex,
+            startDate: campaign.recruitment_start_date ?? null,
+            endDate: campaign.recruitment_end_date ?? null,
+            status: campaign.status,
+          };
+
+    return success({ campaign, applyEligibility, debug });
   } catch (e) {
     return failure(500, campaignErrorCodes.fetchError, 'Failed to fetch campaign.', e);
   }

@@ -26,7 +26,7 @@ export function CampaignListSection() {
   }, []);
 
   return (
-    <section className="space-y-4 rounded-xl border border-blue-200 bg-white p-6">
+    <section className="space-y-4 rounded-xl border border-blue-200 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">모집 중 체험단</h2>
         <div className="flex items-center gap-3">
@@ -47,8 +47,8 @@ export function CampaignListSection() {
 
       {isLoading && <p className="text-sm text-gray-600">목록을 불러오는 중...</p>}
       {isError && (
-        <div className="space-y-2">
-          <p className="text-sm text-red-600">목록을 불러오지 못했습니다.</p>
+        <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <p>목록을 불러오지 못했습니다.</p>
           <Button variant="secondary" onClick={() => refetch()}>
             다시 시도
           </Button>
@@ -69,7 +69,7 @@ export function CampaignListSection() {
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-2 text-sm text-slate-300">
+      <div className="flex items-center justify-between pt-2 text-sm text-slate-500">
         <span>
           페이지 {page} / {totalPages}
         </span>

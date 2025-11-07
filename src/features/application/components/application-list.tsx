@@ -18,9 +18,9 @@ export function ApplicationListSection() {
   const totalPages = data?.meta.totalPages ?? 1;
 
   return (
-    <section className="space-y-4 rounded-xl border border-slate-700 bg-slate-900/60 p-6">
+    <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-slate-100">내 지원 목록</h2>
+        <h2 className="text-lg font-semibold text-slate-900">내 지원 목록</h2>
         <div className="flex items-center gap-3">
           <Select value={status} onValueChange={(v) => setStatus(v as any)}>
             <SelectTrigger className="w-48">
@@ -39,10 +39,10 @@ export function ApplicationListSection() {
         </div>
       </div>
 
-      {isLoading && <p className="text-sm text-slate-300">목록을 불러오는 중...</p>}
+      {isLoading && <p className="text-sm text-slate-500">목록을 불러오는 중...</p>}
       {isError && (
-        <div className="space-y-2">
-          <p className="text-sm text-red-300">목록을 불러오지 못했습니다.</p>
+        <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <p>목록을 불러오지 못했습니다.</p>
           <Button variant="secondary" onClick={() => refetch()}>
             다시 시도
           </Button>
@@ -50,8 +50,8 @@ export function ApplicationListSection() {
       )}
 
       {!!data && data.items.length === 0 && (
-        <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-4 text-slate-300">
-          지원 내역이 없습니다.
+        <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4 text-slate-500">
+          아직 지원한 내역이 없습니다. 신규 체험단을 탐색해보세요.
         </div>
       )}
 
@@ -63,7 +63,7 @@ export function ApplicationListSection() {
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-2 text-sm text-slate-300">
+      <div className="flex items-center justify-between pt-2 text-sm text-slate-500">
         <span>
           페이지 {page} / {totalPages}
         </span>
@@ -87,4 +87,3 @@ export function ApplicationListSection() {
     </section>
   );
 }
-

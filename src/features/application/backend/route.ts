@@ -5,8 +5,8 @@ import { respond, failure } from '@/backend/http/response';
 import { createApplication, listMyApplications } from './service';
 import { applicationErrorCodes } from './error';
 
-export const registerApplicationRoutes = (app: Hono<AppEnv>) => {
-  app.post('/applications', withAuth({ requiredRole: 'influencer' }), async (c) => {
+const registerCreateRoute = (app: Hono<AppEnv>, path: string) => {
+  app.post(path, withAuth({ requiredRole: 'influencer' }), async (c) => {
     const supabase = getSupabase(c);
     const user = getUser(c);
     if (!user?.id) {
@@ -16,8 +16,10 @@ export const registerApplicationRoutes = (app: Hono<AppEnv>) => {
     const result = await createApplication(supabase, user.id, body);
     return respond(c, result);
   });
+};
 
-  app.get('/applications/me', withAuth({ requiredRole: 'influencer' }), async (c) => {
+const registerMyListRoute = (app: Hono<AppEnv>, path: string) => {
+  app.get(path, withAuth({ requiredRole: 'influencer' }), async (c) => {
     const supabase = getSupabase(c);
     const user = getUser(c);
     if (!user?.id) {
@@ -28,4 +30,12 @@ export const registerApplicationRoutes = (app: Hono<AppEnv>) => {
     const result = await listMyApplications(supabase, user.id, params);
     return respond(c, result);
   });
+};
+
+export const registerApplicationRoutes = (app: Hono<AppEnv>) => {
+  registerCreateRoute(app, '/applications');
+  registerCreateRoute(app, '/api/applications');
+
+  registerMyListRoute(app, '/applications/me');
+  registerMyListRoute(app, '/api/applications/me');
 };

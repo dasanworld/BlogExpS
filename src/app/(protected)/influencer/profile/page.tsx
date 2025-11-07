@@ -15,6 +15,7 @@ type Channel = {
 
 type ProfileResponse = {
   profileCompleted: boolean;
+  birthDate?: string | null;
   channels: Array<Required<Channel>>;
   verifiedCount?: number;
 };
@@ -44,6 +45,7 @@ export default function InfluencerProfilePage() {
           const json: ProfileResponse = await res.json();
           if (mounted) {
             setChannels(json.channels.map((c) => ({ ...c, _op: "upsert" })));
+            setBirthDate(json.birthDate ?? "");
           }
         }
       } finally {
@@ -83,8 +85,10 @@ export default function InfluencerProfilePage() {
       });
       const json: ProfileResponse | { error?: { message?: string } } = await res.json();
       if (res.ok) {
+        const payload = json as ProfileResponse;
         setMessage(INFLUENCER_MESSAGES.save.success);
-        setChannels((json as ProfileResponse).channels.map((c: any) => ({ ...c, _op: "upsert" })));
+        setBirthDate(payload.birthDate ?? "");
+        setChannels(payload.channels.map((c: any) => ({ ...c, _op: "upsert" })));
       } else {
         setMessage((json as any)?.error?.message ?? "오류가 발생했습니다.");
       }
@@ -115,6 +119,7 @@ export default function InfluencerProfilePage() {
         } else {
           setMessage(INFLUENCER_MESSAGES.submit.success);
         }
+        setBirthDate(data.birthDate ?? "");
         setChannels(data.channels.map((c: any) => ({ ...c, _op: "upsert" })));
       } else {
         setMessage((json as any)?.error?.message ?? "오류가 발생했습니다.");

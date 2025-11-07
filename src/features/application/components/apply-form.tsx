@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -8,8 +8,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useApplyMutation } from '@/features/application/hooks/useApplyMutation';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { CampaignNotRecruitingError, useApplyMutation } from '@/features/application/hooks/useApplyMutation';
 import { useToast } from '@/hooks/use-toast';
+import { extractApiErrorMessage } from '@/lib/remote/api-client';
 
 const Schema = z.object({
   motivation: z.string().trim().min(1).max(1000),
@@ -22,6 +24,8 @@ export function ApplyForm({ campaignId, disabled }: { campaignId: string; disabl
   const form = useForm<Values>({ resolver: zodResolver(Schema), defaultValues: { motivation: '', visitDate: '' } });
   const { toast } = useToast();
   const mutation = useApplyMutation();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState('');
 
   const isSubmitting = mutation.isPending || form.formState.isSubmitting;
   const isDisabled = disabled || isSubmitting;
@@ -41,52 +45,70 @@ export function ApplyForm({ campaignId, disabled }: { campaignId: string; disabl
       form.reset();
       return res;
     } catch (e) {
-      const msg = e instanceof Error ? e.message : '지원 요청에 실패했습니다.';
+      if (e instanceof CampaignNotRecruitingError) {
+        setDialogMessage(e.message);
+        setDialogOpen(true);
+        return;
+      }
+      const msg = extractApiErrorMessage(e, '지원 요청에 실패했습니다.');
       toast({ title: '오류', description: msg, variant: 'destructive' });
     }
   };
 
   return (
-    <div className="space-y-4 rounded-xl border border-slate-700 bg-slate-900/60 p-6">
-      <h3 className="text-base font-semibold text-slate-100">체험단 지원</h3>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="motivation"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>각오 한마디</FormLabel>
-                <FormControl>
-                  <Textarea rows={4} placeholder="본인의 강점과 포부를 간단히 적어주세요." {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+    <>
+      <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h3 className="text-base font-semibold text-slate-900">체험단 지원</h3>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="motivation"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>각오 한마디</FormLabel>
+                  <FormControl>
+                    <Textarea rows={4} placeholder="본인의 강점과 포부를 간단히 적어주세요." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <FormField
-            control={form.control}
-            name="visitDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>방문 예정일자</FormLabel>
-                <FormControl>
-                  <Input type="date" min={minDate} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <FormField
+              control={form.control}
+              name="visitDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>방문 예정일자</FormLabel>
+                  <FormControl>
+                    <Input type="date" min={minDate} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <div className="flex items-center gap-2">
-            <Button type="submit" disabled={isDisabled}>
-              {isSubmitting ? '제출 중...' : '지원 제출'}
-            </Button>
-          </div>
-        </form>
-      </Form>
-    </div>
+            <div className="flex items-center gap-2">
+              <Button type="submit" disabled={isDisabled}>
+                {isSubmitting ? '제출 중...' : '지원 제출'}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>지원 불가 안내</DialogTitle>
+            <DialogDescription>{dialogMessage || '현재 모집 중이 아닙니다.'}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setDialogOpen(false)}>확인</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
-

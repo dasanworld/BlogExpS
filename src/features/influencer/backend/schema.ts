@@ -7,6 +7,8 @@ export const PlatformEnum = policy.allowedPlatforms && policy.allowedPlatforms.l
   ? z.enum(policy.allowedPlatforms as [string, ...string[]])
   : z.string().min(1);
 
+const BirthDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
 const ChannelDeleteSchema = z.object({
   id: z.string().uuid(),
   _op: z.literal('delete'),
@@ -23,7 +25,7 @@ const ChannelUpsertSchema = z.object({
 export const ChannelInputSchema = z.union([ChannelDeleteSchema, ChannelUpsertSchema]);
 
 export const ProfileUpsertRequestSchema = z.object({
-  birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  birthDate: BirthDateSchema,
   channels: z.array(ChannelInputSchema),
   idempotencyKey: z.string().min(1).optional(),
 });
@@ -46,6 +48,7 @@ export const ChannelSchema = z.object({
 
 export const ProfileResponseSchema = z.object({
   profileCompleted: z.boolean(),
+  birthDate: BirthDateSchema.nullable().optional(),
   channels: z.array(ChannelSchema),
   verifiedCount: z.number().int().nonnegative().optional(),
 });

@@ -9,6 +9,7 @@ import {
   type MyApplicationsResponse,
 } from './schema';
 import { applicationErrorCodes, type ApplicationServiceError } from './error';
+import { getSeoulTodayIndex, toSeoulDayIndex } from '@/shared/date/seoul';
 
 export const createApplication = async (
   supabase: SupabaseClient,
@@ -21,10 +22,9 @@ export const createApplication = async (
   }
   const body: CreateApplicationBody = parsed.data;
 
-  // visitDate must be today or later
-  const today = new Date();
-  const visitDate = new Date(body.visitDate);
-  if (visitDate < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
+  const todayIndex = getSeoulTodayIndex();
+  const visitIndex = toSeoulDayIndex(body.visitDate);
+  if (visitIndex === null || visitIndex < todayIndex) {
     return failure(422, applicationErrorCodes.invalidBody, 'Visit date must be today or later.');
   }
 
@@ -56,12 +56,14 @@ export const createApplication = async (
       return failure(500, applicationErrorCodes.fetchError, 'Failed to fetch campaign.', campErr);
     }
 
-    const start = new Date(campaign.recruitment_start_date as unknown as string);
-    const end = new Date(campaign.recruitment_end_date as unknown as string);
-    const inPeriod = today >= start && today <= end;
     const recruiting = campaign.status === 'recruiting';
-    if (!(recruiting && inPeriod)) {
+    if (!recruiting) {
       return failure(409, applicationErrorCodes.campaignNotRecruiting, '현재 모집 중이 아닙니다.');
+    }
+
+    const endIndex = toSeoulDayIndex(campaign.recruitment_end_date as unknown as string);
+    if (endIndex !== null && todayIndex > endIndex) {
+      return failure(409, applicationErrorCodes.campaignNotRecruiting, '모집 기간이 아닙니다.');
     }
 
     // duplicate check

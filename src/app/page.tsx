@@ -49,12 +49,6 @@ export default function Home() {
             >
               대시보드
             </Link>
-            <Link
-              href="/advertisers/profile"
-              className="text-sm text-gray-700 hover:text-blue-600 transition"
-            >
-              광고주 등록
-            </Link>
             <button
               type="button"
               onClick={handleSignOut}
