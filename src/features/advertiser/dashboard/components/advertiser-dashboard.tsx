@@ -43,27 +43,39 @@ export function AdvertiserDashboard({ initialProfile, initialList, initialCounts
   }>({ ok: false });
 
   useEffect(() => {
+    let cancelled = false;
+    const applyProfile = (profile?: InitialProfile) => {
+      if (!profile || cancelled) return;
+      setGuard({
+        ok: true,
+        profileCompleted: profile.profileCompleted,
+        verificationStatus: profile.verificationStatus,
+        companyName: profile.companyName,
+        category: profile.category,
+        businessRegistrationNumber: profile.businessRegistrationNumber,
+        location: profile.location,
+        profileId: profile.id,
+      });
+    };
+
+    if (initialProfile) {
+      applyProfile(initialProfile);
+    }
+
     const run = async () => {
       try {
-        if (initialProfile) {
-          setGuard({ ok: true,
-            profileCompleted: initialProfile.profileCompleted,
-            verificationStatus: initialProfile.verificationStatus,
-            companyName: initialProfile.companyName,
-            category: initialProfile.category,
-            businessRegistrationNumber: initialProfile.businessRegistrationNumber,
-            location: initialProfile.location,
-            profileId: initialProfile.id,
-          });
-          return;
-        }
         const supabase = getSupabaseBrowserClient();
         const session = await supabase.auth.getSession();
         const access = session.data.session?.access_token;
-        const headers: Record<string, string> = {};
-        if (access) headers['Authorization'] = `Bearer ${access}`;
+        if (!access) {
+          if (!cancelled) setGuard({ ok: false, needLogin: true, message: '로그인이 필요합니다.' });
+          return;
+        }
+        const headers: Record<string, string> = { Authorization: `Bearer ${access}` };
         const { data } = await apiClient.get(ADVERTISER_API_ROUTES.me, { headers, withCredentials: true });
-        setGuard({ ok: true,
+        if (cancelled) return;
+        setGuard({
+          ok: true,
           profileCompleted: Boolean((data as any)?.profileCompleted),
           verificationStatus: (data as any)?.verificationStatus,
           companyName: (data as any)?.companyName,
@@ -73,6 +85,7 @@ export function AdvertiserDashboard({ initialProfile, initialList, initialCounts
           profileId: (data as any)?.id,
         });
       } catch (e) {
+        if (cancelled) return;
         if (isAxiosError(e) && e.response?.status === 401) {
           setGuard({ ok: false, needLogin: true, message: '로그인이 필요합니다.' });
         } else {
@@ -81,7 +94,10 @@ export function AdvertiserDashboard({ initialProfile, initialList, initialCounts
       }
     };
     void run();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [initialProfile]);
 
   if (!guard.ok) {
     return (

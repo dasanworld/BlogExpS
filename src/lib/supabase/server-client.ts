@@ -22,6 +22,8 @@ export const createSupabaseServerClient = async (): Promise<
 > => {
   const cookieStore = (await cookies()) as WritableCookieStore;
 
+  const canSetCookies = typeof cookieStore.set === "function";
+
   return createServerClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -31,9 +33,15 @@ export const createSupabaseServerClient = async (): Promise<
           return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
+          if (!canSetCookies) {
+            return;
+          }
           cookiesToSet.forEach(({ name, value, options }) => {
-            if (typeof cookieStore.set === "function") {
-              cookieStore.set({ name, value, ...options });
+            try {
+              cookieStore.set?.({ name, value, ...options });
+            } catch {
+              // In app router server components, mutating cookies is not allowed.
+              // Ignore set attempts since we only need read access here.
             }
           });
         },
